@@ -32,12 +32,18 @@ class Process
 	# Process.pledge(:stdio, :rpath, :wpath, :flock)
 	# Process.pledge(["stdio", "rpath"], ["/some/exec/promise"])
 	# ```
-	def self.pledge(promises : Array(String|Symbol), execpromises : Array(String)? = nil)
+	def self.pledge(promises : Array(String|Symbol) = [""] of String|Symbol, execpromises : Array(String)? = nil)
 		{% if flag?(:openbsd) %}
 			promises = promises.join(' ')
-			execpromises =  execpromises.join(' ') if ( !execpromises.nil? )
-			return if ( LibC.pledge(promises, execpromises) == 0 )
-			_pledge_error()
+			execpromises = execpromises.join(' ') if execpromises
+			if ( LibC.pledge(promises, execpromises) != 0 )
+				case ( Errno.value )
+					when Errno::EFAULT then raise Errno.new("pledge: Promises or execpromises points outside the process's allocated address space")
+					when Errno::EINVAL then raise Errno.new("pledge: Promises is malformed or contains invalid keywords")
+					when Errno::EPERM  then raise Errno.new("pledge: This process is attempting to increase permissions")
+					else raise Errno.new("pledge")
+				end
+			end
 		{% else %}
 			raise NotImplementedError.new("Process.pledge")
 		{% end %}
@@ -45,36 +51,6 @@ class Process
 
 	# ditto
 	def self.pledge(*promises : String|Symbol)
-		{% if flag?(:openbsd) %}
-			return if ( LibC.pledge(promises.join(' '), nil) == 0 )
-			_pledge_error()
-		{% else %}
-			raise NotImplementedError.new("Process.pledge")
-		{% end %}
+		pledge(promises.to_a)
 	end
-
-	# ditto
-	def self.pledge()
-		{% if flag?(:openbsd) %}
-			return if ( LibC.pledge("", nil) == 0 )
-			_pledge_error()
-		{% else %}
-			raise NotImplementedError.new("Process.pledge")
-		{% end %}
-	end
-
-	# :nodoc:
-	private def self._pledge_error()
-		{% if flag?(:openbsd) %}
-			case ( Errno.value )
-				when Errno::EFAULT then raise Errno.new("promises or execpromises points outside the process's allocated address space.")
-				when Errno::EINVAL then raise Errno.new("promises is malformed or contains invalid keywords.")
-				when Errno::EPERM  then raise Errno.new("This process is attempting to increase permissions.")
-				else raise Errno.new("...")
-			end
-		{% else %}
-			raise NotImplementedError.new("Process._pledge_error")
-		{% end %}
-	end
-
 end
