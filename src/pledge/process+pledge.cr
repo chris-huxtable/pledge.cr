@@ -28,9 +28,15 @@ class Process
 	#
 	# More information is available in the OpenBSD [man pages](http://man.openbsd.org/pledge).
 	#
+	# To restrict a process:
 	# ```
 	# Process.pledge(:stdio, :rpath, :wpath, :flock)
 	# Process.pledge(["stdio", "rpath"], ["/some/exec/promise"])
+	# ```
+	#
+	# To completely restrict a process:
+	# ```
+	# Process.pledge()
 	# ```
 	def self.pledge(promises : Array(String|Symbol) = [""] of String|Symbol, execpromises : Array(String)? = nil)
 		{% if flag?(:openbsd) %}
