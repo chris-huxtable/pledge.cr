@@ -26,10 +26,10 @@ class Process
 	# A process which attempts a restricted operation is killed with an
 	# uncatchable SIGABRT.
 	#
-	# More information is available in the OpenBSD [man pages](http://man.openbsd.org/pledge)
+	# More information is available in the OpenBSD [man pages](http://man.openbsd.org/pledge).
 	#
 	# ```
-	# Process.pledge([:stdio, :rpath, :wpath, :flock])
+	# Process.pledge(:stdio, :rpath, :wpath, :flock)
 	# Process.pledge(["stdio", "rpath"], ["/some/exec/promise"])
 	# ```
 	def self.pledge(promises : Array(String|Symbol), execpromises : Array(String)? = nil)
@@ -43,12 +43,7 @@ class Process
 		{% end %}
 	end
 
-	# Similar to `Process.pledge(promises, execpromises)`.
-	#
-	# ```
-	# Process.pledge(:stdio, :rpath, :wpath, :flock)
-	# Process.pledge("stdio", "rpath")
-	# ```
+	# ditto
 	def self.pledge(*promises : String|Symbol)
 		{% if flag?(:openbsd) %}
 			return if ( LibC.pledge(promises.join(' '), nil) == 0 )
@@ -58,11 +53,7 @@ class Process
 		{% end %}
 	end
 
-	# Equivilent to calling `Process.pledge("", nil)`.
-	#
-	# ```
-	# Process.pledge()
-	# ```
+	# ditto
 	def self.pledge()
 		{% if flag?(:openbsd) %}
 			return if ( LibC.pledge("", nil) == 0 )
