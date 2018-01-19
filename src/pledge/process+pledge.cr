@@ -26,64 +26,31 @@ class Process
 	# A process which attempts a restricted operation is killed with an
 	# uncatchable SIGABRT.
 	#
-	# More information is available in the OpenBSD [man pages](http://man.openbsd.org/pledge)
-	#
-	# ```
-	# Process.pledge([:stdio, :rpath, :wpath, :flock])
-	# Process.pledge(["stdio", "rpath"], ["/some/exec/promise"])
-	# ```
-	def self.pledge(promises : Array(String|Symbol), execpromises : Array(String)? = nil)
-		{% if flag?(:openbsd) %}
-			promises = promises.join(' ')
-			execpromises =  execpromises.join(' ') if ( !execpromises.nil? )
-			return if ( LibC.pledge(promises, execpromises) == 0 )
-			_pledge_error()
-		{% else %}
-			raise NotImplementedError.new("Process.pledge")
-		{% end %}
-	end
-
-	# Similar to `Process.pledge(promises, execpromises)`.
+	# More information is available in the OpenBSD [man pages](http://man.openbsd.org/pledge).
 	#
 	# ```
 	# Process.pledge(:stdio, :rpath, :wpath, :flock)
-	# Process.pledge("stdio", "rpath")
+	# Process.pledge(["stdio", "rpath"], ["/some/exec/promise"])
 	# ```
-	def self.pledge(*promises : String|Symbol)
+	def self.pledge(promises : Array(String|Symbol) = [""] of String|Symbol, execpromises : Array(String)? = nil)
 		{% if flag?(:openbsd) %}
-			return if ( LibC.pledge(promises.join(' '), nil) == 0 )
-			_pledge_error()
-		{% else %}
-			raise NotImplementedError.new("Process.pledge")
-		{% end %}
-	end
-
-	# Equivilent to calling `Process.pledge("", nil)`.
-	#
-	# ```
-	# Process.pledge()
-	# ```
-	def self.pledge()
-		{% if flag?(:openbsd) %}
-			return if ( LibC.pledge("", nil) == 0 )
-			_pledge_error()
-		{% else %}
-			raise NotImplementedError.new("Process.pledge")
-		{% end %}
-	end
-
-	# :nodoc:
-	private def self._pledge_error()
-		{% if flag?(:openbsd) %}
-			case ( Errno.value )
-				when Errno::EFAULT then raise Errno.new("promises or execpromises points outside the process's allocated address space.")
-				when Errno::EINVAL then raise Errno.new("promises is malformed or contains invalid keywords.")
-				when Errno::EPERM  then raise Errno.new("This process is attempting to increase permissions.")
-				else raise Errno.new("...")
+			promises = promises.join(' ')
+			execpromises = execpromises.join(' ') if execpromises
+			if ( LibC.pledge(promises, execpromises) != 0 )
+				case ( Errno.value )
+					when Errno::EFAULT then raise Errno.new("pledge: Promises or execpromises points outside the process's allocated address space")
+					when Errno::EINVAL then raise Errno.new("pledge: Promises is malformed or contains invalid keywords")
+					when Errno::EPERM  then raise Errno.new("pledge: This process is attempting to increase permissions")
+					else raise Errno.new("pledge")
+				end
 			end
 		{% else %}
-			raise NotImplementedError.new("Process._pledge_error")
+			raise NotImplementedError.new("Process.pledge")
 		{% end %}
 	end
 
+	# ditto
+	def self.pledge(*promises : String|Symbol)
+		pledge(promises.to_a)
+	end
 end
