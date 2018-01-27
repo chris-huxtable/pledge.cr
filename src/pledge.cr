@@ -1,4 +1,4 @@
-# Copyright (c) 2017 Christian Huxtable <chris@huxtable.ca>.
+# Copyright (c) 2018 Christian Huxtable <chris@huxtable.ca>.
 #
 # Permission to use, copy, modify, and/or distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
