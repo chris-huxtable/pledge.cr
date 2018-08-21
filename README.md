@@ -1,4 +1,6 @@
 # pledge.cr
+[![Docs](https://img.shields.io/badge/docs-available-brightgreen.svg)](https://chris-huxtable.github.io/pledge.cr/)
+[![GitHub release](https://img.shields.io/github/release/chris-huxtable/pledge.cr.svg)](https://github.com/chris-huxtable/pledge.cr/releases)
 
 Adds `pledge(2)` to crystal.
 
