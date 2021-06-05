@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Christian Huxtable <chris@huxtable.ca>.
+# Copyright (c) 2021 joshua stein <jcs@jcs.org>
 #
 # Permission to use, copy, modify, and/or distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -12,9 +12,32 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-{% skip_file() if !flag?(:openbsd) %}
+require "./spec_helper"
 
-lib LibC
-  fun pledge(promises : Char*, execpromises : Char*) : Int
-  fun unveil(path : Char*, permissions : Char*) : Int
+describe "pledge" do
+  it "pledges" do
+    reader, writer = IO.pipe
+
+    child = Process.fork do
+      Process.pledge("stdio")
+
+      File.open("/etc/passwd")
+      writer.puts "shouldn't get here"
+    end
+
+    child.wait.exit_status.should eq LibC::SIGABRT
+  end
+
+  it "catches bad pledges" do
+    reader, writer = IO.pipe
+
+    child = Process.fork do
+      Process.pledge("stdonk")
+    rescue e : Process::PledgeError
+      writer.puts e.class
+    end
+
+    child.wait
+    reader.gets.should eq "Process::PledgeError"
+  end
 end
