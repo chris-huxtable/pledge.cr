@@ -2,7 +2,7 @@
 [![Docs](https://img.shields.io/badge/docs-available-brightgreen.svg)](https://chris-huxtable.github.io/pledge.cr/)
 [![GitHub release](https://img.shields.io/github/release/chris-huxtable/pledge.cr.svg)](https://github.com/chris-huxtable/pledge.cr/releases)
 
-Adds `pledge(2)` to crystal.
+Adds `pledge(2)` and `unveil(2)` to crystal.
 
 ## Installation
 
@@ -20,7 +20,7 @@ dependencies:
 require "pledge"
 ```
 
-Partial `syscall` restrictions:
+Partial `syscall` restrictions with `pledge`:
 ``` crystal
 Process.pledge(:stdio, :rpath, :wpath, :flock)
 Process.pledge("stdio", "rpath")
@@ -31,7 +31,23 @@ Full restrictions:
 Process.pledge()
 ```
 
-More information and a list of 'promises' is available in the OpenBSD [man pages](http://man.openbsd.org/pledge).
+Filesystem restrictions with `unveil`:
+
+``` crystal
+Process.unveil({"/home/foo/bar" => "r", "/home/foo/bar/data" => "rwc"})
+```
+
+Remove further unveiling:
+
+``` crystal
+Process.unveil
+```
+
+More information and a list of pledge 'promises' are available in the OpenBSD
+man pages for
+[pledge(2)](http://man.openbsd.org/pledge)
+and
+[unveil(2)](http://man.openbsd.org/unveil).
 
 ## Contributing
 
