@@ -15,6 +15,10 @@
 require "./lib_c/unistd"
 
 class Process
+  class PledgeError < Exception
+    include SystemError
+  end
+
   # The current process is forced into a restricted-service operating mode. A
   # few subsets are available, roughly described as computation, memory
   # management, read-write operations on file descriptors, opening of files,
@@ -41,12 +45,16 @@ class Process
     {% if flag?(:openbsd) %}
       promises = promises.join(' ')
       execpromises = execpromises.join(' ') if execpromises
-      if (LibC.pledge(promises, execpromises) != 0)
-        case (Errno.value)
-        when Errno::EFAULT then raise Errno.new("pledge: Promises or execpromises points outside the process's allocated address space")
-        when Errno::EINVAL then raise Errno.new("pledge: Promises is malformed or contains invalid keywords")
-        when Errno::EPERM  then raise Errno.new("pledge: This process is attempting to increase permissions")
-        else                    raise Errno.new("pledge")
+      if LibC.pledge(promises, execpromises) != 0
+        case Errno.value
+        when Errno::EFAULT
+          raise PledgeError.new("promises or execpromises points outside the process's allocated address space")
+        when Errno::EINVAL
+          raise PledgeError.new("promises is malformed or contains invalid keywords")
+        when Errno::EPERM
+          raise PledgeError.new("process is attempting to increase permissions")
+        else
+          raise PledgeError.from_errno("pledge")
         end
       end
     {% else %}
